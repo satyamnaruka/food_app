@@ -261,90 +261,45 @@ class PreLoginController extends Controller
 		}
 	}
 
-	public function serviceRegistration(Request $request){                                                                                                                                                                                                                                                                                                                                                  
-		
-		$rules = [
-			'shop_name' => 'required', 
-			'owner_name' => 'required', 
-			'mobile' => 'required|numeric|regex:/^([0-9\s\-\+\(\)]*)$/|min:10', 
-			'email' => 'nullable|email', 
-            'password' => 'required|min:6', 
+	public function login(Request $request){
+
+		$rules=[
+			'name'=>'required',
+			'mobile'=>'required|numeric',
 		];
-		
-		$validator = Validator::make($request->json()->all(), $rules);
-		
-		if ($validator->fails()) {
-			$message = [];
-			$messages_l = json_decode(json_encode($validator->messages()), true);
-			foreach ($messages_l as $msg) {
-				$message= $msg[0];
+
+		$validator= Validator::make($request->json()->all(),$rules);
+
+		if($validator->fails()){
+			$message='';
+			$message_1= json_decode(json_encode($validator->message()),true);
+			foreach($message_1 as $msg){
+				$message=$msg[0];
 				break;
 			}
-			
-			return response(array("error"=> true, "message"=>$message),200); 
 
+			return response(array("error"=>true,'message'=>$message),403);
 		}else{
 
 			try{
-				
-				//chk unique email
-				$userResult=\App\Models\User::where([
-											['mobile','=',$request->json()->get('mobile')],
-											['email','=',$request->json()->get('email')]
-											])->first();
+
+				$userResult = \App\Models\User::where('mobile',$request->json()->get('mobile'))->first();
 
 				if(!$userResult){
 
-					$otp = \App\Helpers\commonHelper::getOtp($request->json()->get('mobile'));
+					$userResult = new \App\Models\User();
+					$userResult->name=$request->json()->get('name');
+					$userResult->mobile=$request->json()->get('mobile');
 
-					$user=new \App\Models\User();
-					$user->shop_name=$request->json()->get('shop_name');
-					$user->owner_name=$request->json()->get('owner_name');
-					$user->mobile=$request->json()->get('mobile');
-					$user->email=$request->json()->get('email');
-					$user->password=\Hash::make($request->json()->get('password'));
-					$user->otp=$otp;
-					$user->otp_verify='0';
-					$user->user_type='ServicePartner';
-					$user->designation_id='3';
-					$user->save();
-
-					return response(array("error"=> true,'message'=>'Sent otp on your mobile',"verify"=>true), 200);
-
-				}else if($userResult['block_user']=='1'){
-					
-					return response(array("error"=> false, "message"=>"User is blocked. Please contact to administration"),200);
-					
+					$userResult->save();
+					return response(array("error"=>false,'message'=>'Reg successfully.','result'=>$userResult),200);
 				}else{
 					
-					if(\Hash::check($request->json()->get('password'), $userResult->password)){
+					return response(array("error"=>false,'message'=>'Login successfully.','result'=>$userResult,"token"=>$userResult->createToken('authToken')->accessToken),200);
 
-						if($userResult->otp_verify=='1'){
-						
-							$userResult->save();
-	
-							return response(array('error'=>false,"message"=>'Service partner login successfully',"token"=>$userResult->createToken('authToken')->accessToken,"verify"=>true,"result"=>$userResult->toArray()),200);
-	
-						}else{
-							
-							$otp = \App\Helpers\commonHelper::getOtp($request->json()->get('email'));
-							
-							return response(array("error"=> true,"message"=>"OTP verification is pending. So please first verify your account"),200);
-							
-						}
-						
-					}else{
-						
-						return response(array("error"=> true,"message"=>"Password incorrect. So please try again","verify"=>false),200);
-						
-					}
 				}
-
-			}catch (\Exception $e){
-				
-				return response(array("error" 
-					=> true, "message" => $e->getMessage()),200); 
-				
+			}catch(\Exception $e){
+				return response(array("error"=>true,'message'=> $e->getmessage()),200);
 			}
 		}
 	}

@@ -176,7 +176,7 @@ class PostLoginController extends Controller
 
 		try{
 				
-			$result=\App\Models\Product::where('category_id',$id)->get();
+			$result=\App\Models\Product::where('category_id',$id)->where('status','1')->get();
 
 			if($result->count()==0){
 				return response(array('error'=>false,'message'=>'data not found'),200);
@@ -194,13 +194,80 @@ class PostLoginController extends Controller
 						'description'=>($val['description']),
 						'image'=>(asset('uploads/product/'.$val->image))
 					];
-
-					return response(array("error"=>false,'message'=>'Product fatch successfully','result'=>$productResult),200);
-
 				}
+
+				return response(array("error"=>false,'message'=>'Product fatch successfully','result'=>$productResult),200);
+
 			}
 		}catch(\Exception $e){
 			return response(array("error"=>true,'message'=> $e->getmessage()),200);
 		}
 	}
+
+	public function addToCart(Request $request){
+		
+		$rules=[
+			'product_id'=>'required|exists:products,id',
+			'qty'=>'required|numeric',
+			'price'=>'required|numeric',
+			'add_type'=>'required|in:add,update'
+		];
+
+		$validator = Validator::make($request->json()->all(), $rules);
+
+		if($validator->fails()){
+			$message='';
+			$message_1 = json_decode(json_encode($validator->message()),true);
+			foreach($message_1 as $msg){
+				$message=$msg=[0];
+				break;
+			}
+
+			return response(array("error"=>true,'message'=>$message),403);
+		}else{
+
+			try{
+
+				$cart = \App\Models\AddtoCart::where([
+												['user_id',$request->json()->get('user_id')],
+												['product_id',$request->json()->get('product_id')]
+												])->first();
+				if(!$cart){
+
+					$cart = new \App\Models\AddtoCart();
+
+					$cart->user_id=$request->json()->get('user_id');
+					$cart->product_id=$request->json()->get('product_id');
+					$cart->price=$request->json()->get('price');
+					$cart->qty=$request->json()->get('qty');
+				}else{
+					
+					if($request->json()->get('add_type')=='add'){
+
+						$cart->qty+=$request->json()->get('qty');
+
+					}else{
+
+						$cart->qty=$request->json()->get('qty');
+					}
+					
+				}
+				$cart->save();
+				
+				if($request->json()->get('id')>0){
+					
+					return response(array("message" => "Cart updated successfully."),200); 
+				}else{
+					
+					return response(array("message" => "Item successfully added into cart."),200); 
+				}
+
+			}catch(\Exception $e){
+				return response(array("error"=>true,'message'=> $e->getmessage()),403);
+			}
+		}
+
+	}
+
+
 }
