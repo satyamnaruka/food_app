@@ -25,10 +25,10 @@ Route::group([
     Route::post("update-profile","API\PostLoginController@updateProfile");
     Route::get("logout","API\PostLoginController@logout");
     Route::post('forgot-password',"API\preLoginController@forgotPassword");
-    
+    Route::post('add-to-cart',"API\PostLoginController@addToCart");
   });
   
-Route::post('add-to-cart',"API\PostLoginController@addToCart");
+
 Route::get('get-product-list/{id}',"API\PostLoginController@getProductByCate");
 Route::get('product-list',"API\PostLoginController@productList");
 Route::get('category-list',"API\PostLoginController@categoryList");

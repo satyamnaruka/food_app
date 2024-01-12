@@ -292,7 +292,7 @@ class PreLoginController extends Controller
 					$userResult->mobile=$request->json()->get('mobile');
 
 					$userResult->save();
-					return response(array("error"=>false,'message'=>'Reg successfully.','result'=>$userResult),200);
+					return response(array("error"=>false,'message'=>'Reg successfully.','result'=>$userResult,"token"=>$userResult->createToken('authToken')->accessToken),200);
 				}else{
 					
 					return response(array("error"=>false,'message'=>'Login successfully.','result'=>$userResult,"token"=>$userResult->createToken('authToken')->accessToken),200);

@@ -229,14 +229,14 @@ class PostLoginController extends Controller
 			try{
 
 				$cart = \App\Models\AddtoCart::where([
-												['user_id',$request->json()->get('user_id')],
+												['user_id',\Auth::User()->id],
 												['product_id',$request->json()->get('product_id')]
 												])->first();
 				if(!$cart){
 
 					$cart = new \App\Models\AddtoCart();
 
-					$cart->user_id=$request->json()->get('user_id');
+					$cart->user_id=\Auth::User()->id;
 					$cart->product_id=$request->json()->get('product_id');
 					$cart->price=$request->json()->get('price');
 					$cart->qty=$request->json()->get('qty');
